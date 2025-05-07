@@ -1,53 +1,53 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "hardware/i2c.h"
 #include "pico/cyw43_arch.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "utils/joystick/joystick.h"
+#include "utils/conexao_servidor/conexao_usuario.h"
 
-// I2C defines
-// This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
-#define I2C_PORT i2c0
-#define I2C_SDA 8
-#define I2C_SCL 9
+#define NOME_REDE_WIFI "SBG_Ext"
+#define SENHA_REDE_WIFI "SBG272417"
 
-
-
-
+// --- Função Principal (início do programa) ---
 int main()
 {
-    stdio_init_all();
+    stdio_init_all();           // Inicializa a comunicação serial
+    inicializar_adc();          // Inicializa os sensores (adc(1) e adc(2)) para leitura do joystick
 
-    // Initialise the Wi-Fi chip
-    if (cyw43_arch_init()) {
-        printf("Wi-Fi init failed\n");
+    // Inicializa o Wi-Fi e verifica o erro
+    while (cyw43_arch_init())
+    {
+        printf("Falha ao inicializar Wi-Fi\n");
+        sleep_ms(100);
         return -1;
     }
 
-    // I2C Initialisation. Using it at 400Khz.
-    i2c_init(I2C_PORT, 400*1000);
-    
-    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(I2C_SDA);
-    gpio_pull_up(I2C_SCL);
-    // For more examples of I2C use see https://github.com/raspberrypi/pico-examples/tree/master/i2c
-
-    // Enable wifi station
     cyw43_arch_enable_sta_mode();
 
-    printf("Connecting to Wi-Fi...\n");
-    if (cyw43_arch_wifi_connect_timeout_ms("Your Wi-Fi SSID", "Your Wi-Fi Password", CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("failed to connect.\n");
-        return 1;
-    } else {
-        printf("Connected.\n");
-        // Read the ip address in a human readable way
-        uint8_t *ip_address = (uint8_t*)&(cyw43_state.netif[0].ip_addr.addr);
-        printf("IP address %d.%d.%d.%d\n", ip_address[0], ip_address[1], ip_address[2], ip_address[3]);
+    printf("Conectando ao Wi-Fi '%s'...\n", NOME_REDE_WIFI);
+    // Conecta ao Wi-Fi e verifica o erro
+    while (cyw43_arch_wifi_connect_timeout_ms(NOME_REDE_WIFI, SENHA_REDE_WIFI, CYW43_AUTH_WPA2_AES_PSK, 20000))
+    {
+        printf("Falha ao conectar ao Wi-Fi...Tentando novamente...\n");
+        sleep_ms(5000);
+    }
+    printf("Conectado ao Wi-Fi\n");
+    
+    // Verifica o endereço IP do dispositivo
+    if (netif_default)
+    {
+        printf("IP do dispositivo: %s\n", ipaddr_ntoa(&netif_default->ip_addr));
     }
 
-    while (true) {
-        printf("Hello, world!\n");
+    while (true)
+    {
+        cyw43_arch_poll();
+        enviar_dados_para_nuvem();
         sleep_ms(1000);
     }
+
+    cyw43_arch_deinit();
+    return 0;
 }
