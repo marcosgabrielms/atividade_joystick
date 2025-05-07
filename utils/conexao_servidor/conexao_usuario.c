@@ -1,37 +1,40 @@
-#include "conexao-cliente.h"
 
-static err_t callback_receiver(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err) {
+#include "conexao_usuario.h"
 
+static err_t callback_resposta_recebida(void *arg, struct tcp_pcb *pcb, struct pbuf *p, err_t err) {
+    
     if (!p) {
-        printf("Conexão Fechada pelo servidor. \n");
+        printf("Conexão fechada pelo servidor.\n");
         tcp_close(pcb);
         return ERR_OK;
     }
+
     printf("Resposta do servidor:\n");
     char *dados = (char *)malloc(p->tot_len + 1);
     if (dados) {
-        pbuf_copy_partial (p, dados, p->tot_len, 0);
+        pbuf_copy_partial(p, dados, p->tot_len, 0);
         dados[p->tot_len] = '\0';
         printf("%s\n", dados);
         free(dados);
     }
+
     pbuf_free(p);
     return ERR_OK;
 }
 
-static err_t callback_connected (void *arg, struct tcp_pcb *pcb, err_t err) {
-    if (err!= ERR_OK) {
+static err_t callback_conectado(void *arg, struct tcp_pcb *pcb, err_t err) {
+    if (err != ERR_OK) {
         printf("Erro ao conectar: %d\n", err);
-        tpc_abort(pcb);
+        tcp_abort(pcb);
         return err;
     }
 
-    tcp_recv(pcb, callback_receiver);
+    tcp_recv(pcb, callback_resposta_recebida);
 
     // Coletar dados
     uint8_t x = leitura_joystick_x();
     uint8_t y = leitura_joystick_y();
-    const char* direcao = nome_direcao();
+    const char* direcao = verificar_movimento();
 
     char corpo_json[128];
     snprintf(corpo_json, sizeof(corpo_json),
@@ -79,7 +82,7 @@ static void callback_dns_resolvido(const char *nome_host, const ip_addr_t *ip_re
     }
 
     // Conectar à porta do PROXY
-    err_t erro = tcp_connect(pcb, ip_resolvido, PROXY_PORT, callback_connected);
+    err_t erro = tcp_connect(pcb, ip_resolvido, PROXY_PORT, callback_conectado);
     if (erro != ERR_OK) {
         printf("Erro ao conectar a %s:%d: %d\n", nome_host, PROXY_PORT, erro);
         tcp_abort(pcb);
@@ -102,7 +105,7 @@ void enviar_dados_para_nuvem() {
         }
 
         // Conectar à porta do PROXY
-        err_t erro = tcp_connect(pcb, &endereco_ip, PROXY_PORT, callback_connected);
+        err_t erro = tcp_connect(pcb, &endereco_ip, PROXY_PORT, callback_conectado);
         if (erro != ERR_OK) {
             printf("Erro ao conectar (cache) a %s:%d: %d\n", PROXY_HOST, PROXY_PORT, erro);
             tcp_abort(pcb);
@@ -112,5 +115,4 @@ void enviar_dados_para_nuvem() {
     } else {
         printf("Erro ao iniciar DNS para %s: %d\n", PROXY_HOST, resultado_dns);
     }
-    
 }

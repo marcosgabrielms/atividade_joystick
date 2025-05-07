@@ -1,3 +1,4 @@
+
 # Generated Cmake Pico project file
 
 cmake_minimum_required(VERSION 3.13)
@@ -36,9 +37,9 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(atividade_joystick 
-        src/atividade_joystick.c
-        src/utils/joystick.c
-        src/connection/cliente_http.c)
+        atividade_joystick.c
+        utils/joystick/joystick.c
+        utils/conexao_servidor/conexao_usuario.c)
 
 pico_set_program_name(atividade_joystick "atividade_joystick")
 pico_set_program_version(atividade_joystick "0.1")
@@ -58,9 +59,8 @@ target_link_libraries(atividade_joystick
 # Add the standard include files to the build
 target_include_directories(atividade_joystick PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
-        ${CMAKE_CURRENT_LIST_DIR}/src
-        ${CMAKE_CURRENT_LIST_DIR}/src/utils
-        ${CMAKE_CURRENT_LIST_DIR}/src/conexao
+        ${CMAKE_CURRENT_LIST_DIR}/utils
+        ${CMAKE_CURRENT_LIST_DIR}/utils/conexao_servidor
         ${PICO_SDK_PATH}/lib/lwip/src/include
         ${PICO_SDK_PATH}/lib/lwip/src/include/arch
         ${PICO_SDK_PATH}/lib/lwip/src/include/lwip

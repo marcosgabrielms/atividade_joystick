@@ -6,12 +6,13 @@
 #include <stdlib.h>
 #include "pico/cyw43_arch.h"
 #include "lwip/dns.h"
+#include "lwip/ip_addr.h"
 #include "lwip/tcp.h"
 #include "utils/joystick/joystick.h"
 
-#define PROXY_HOST "switchback.proxy.rlwy.net"
-#define PROXY_PORT "48443"
+#define PROXY_HOST "maglev.proxy.rlwy.net"
+#define PROXY_PORT 48443
 
-void enviar_dados();
+void enviar_dados_para_nuvem();
 
 #endif
